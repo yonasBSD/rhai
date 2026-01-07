@@ -39,6 +39,7 @@ getrandom = { version = "0.3.4", optional = true }
 rustyline = { version = "15.0.0", optional = true }
 document-features = { version = "0.2.0", optional = true }
 arbitrary = { version = "1.3.2", optional = true, features = ["derive"] }
+glob = { version = "0.3.3", optional = true }
 
 [dev-dependencies]
 rmp-serde = "1.1.1"
@@ -62,7 +63,7 @@ serde = ["dep:serde", "smartstring/serde", "smallvec/serde", "thin-vec/serde"]
 ## Allow [Unicode Standard Annex #31](https://unicode.org/reports/tr31/) for identifiers.
 unicode-xid-ident = ["unicode-xid"]
 ## Enable functions metadata (including doc-comments); implies [`serde`](#feature-serde).
-metadata = ["serde", "serde_json", "rhai_codegen/metadata", "smartstring/serde"]
+metadata = ["dep:serde", "dep:serde_json", "rhai_codegen/metadata", "smartstring/serde"]
 ## Expose internal data structures (e.g. `AST` nodes).
 internals = []
 ## Enable the debugging interface (implies [`internals`](#feature-internals)).
@@ -71,6 +72,27 @@ debugging = ["internals"]
 bin-features = ["decimal", "metadata", "serde", "debugging", "rustyline"]
 ## Enable fuzzing via the [`arbitrary`](https://crates.io/crates/arbitrary) crate.
 fuzz = ["arbitrary", "rust_decimal?/rust-fuzz", "serde"]
+
+## Standard Library
+stdlib = ["fs", "env", "shell", "strings", "utils"]
+## Filesystem
+fs = ["dep:glob"]
+## Environement variables
+env = []
+## Shell execution
+shell = []
+## Strings
+strings = ["json", "toml", "yaml"]
+## JSON
+json = ["dep:serde", "dep:serde_json"]
+## TOML
+toml = []
+## YAML
+yaml = []
+## utils
+utils = ["semver"]
+## semver
+semver = []
 
 #! ### System Configuration Features
 
@@ -100,6 +122,26 @@ no_closure = []
 no_module = []
 ## Remove support for custom syntax.
 no_custom_syntax = []
+## Remove stdlib
+no_stdlib = ["no_fs", "no_env", "no_shell", "no_strings", "no_utils"]
+## Remove filesystem
+no_fs = []
+## Environement variables
+no_env = []
+## Shell execution
+no_shell = []
+## Strings
+no_strings = ["no_json", "no_toml", "no_yaml"]
+## JSON
+no_json = []
+## TOML
+no_toml = []
+## YAML
+no_yaml = []
+## utils
+no_utils = ["no_semver"]
+## semver
+no_semver = []
 
 #! ### Performance-Related Features
 
@@ -127,6 +169,8 @@ unstable = []
 
 ## Running under a testing environment.
 testing-environ = []
+glob = ["dep:glob"]
+toml_edit = []
 
 [[bin]]
 name = "rhai-repl"

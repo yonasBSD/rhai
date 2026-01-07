@@ -6,7 +6,7 @@ use crate::func::native::{
     locked_write, OnDebugCallback, OnDefVarCallback, OnParseTokenCallback, OnPrintCallback,
     OnVarCallback,
 };
-use crate::packages::{Package, StandardPackage};
+use crate::packages::{Package, StandardPackage, YonasBSDPackage};
 use crate::tokenizer::Token;
 use crate::types::StringsInterner;
 use crate::{Dynamic, Identifier, ImmutableString, Locked, SharedModule};
@@ -314,6 +314,9 @@ impl Engine {
 
         // Register the standard package
         engine.register_global_module(StandardPackage::new().as_shared_module());
+
+        // Register the yonasBSD package
+        engine.register_global_module(YonasBSDPackage::new().as_shared_module());
 
         engine
     }
