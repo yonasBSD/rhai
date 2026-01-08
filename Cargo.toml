@@ -50,7 +50,7 @@ serde_json = { version = "1.0.45", default-features = false, features = ["alloc"
 ## Default features: `std`, uses runtime random numbers for hashing.
 default = ["std", "ahash/runtime-rng"] # ahash/runtime-rng trumps ahash/compile-time-rng
 ## Standard features: uses compile-time random number for hashing.
-std = ["once_cell/std", "ahash/std", "num-traits/std", "smartstring/std"]
+std = ["once_cell/std", "ahash/std", "num-traits/std", "smartstring/std", "stdlib"]
 
 #! ### Enable Special Functionalities
 
