@@ -19,12 +19,12 @@ pub(crate) mod math_basic;
 pub(crate) mod pkg_core;
 pub(crate) mod pkg_std;
 pub(crate) mod pkg_yonasbsd;
+pub(crate) mod plots_basic;
 pub(crate) mod semver_basic;
 pub(crate) mod shell_basic;
 pub(crate) mod string_basic;
 pub(crate) mod string_more;
 pub(crate) mod time_basic;
-pub(crate) mod plots_basic;
 
 pub use arithmetic::ArithmeticPackage;
 #[cfg(not(feature = "no_index"))]
@@ -50,6 +50,8 @@ pub use math_basic::BasicMathPackage;
 pub use pkg_core::CorePackage;
 pub use pkg_std::StandardPackage;
 pub use pkg_yonasbsd::YonasBSDPackage;
+#[cfg(not(feature = "no_plots"))]
+pub use plots_basic::BasicPlotsPackage;
 #[cfg(not(feature = "no_semver"))]
 pub use semver_basic::BasicSemverPackage;
 #[cfg(not(feature = "no_shell"))]
@@ -58,8 +60,6 @@ pub use string_basic::BasicStringPackage;
 pub use string_more::MoreStringPackage;
 #[cfg(not(feature = "no_time"))]
 pub use time_basic::BasicTimePackage;
-#[cfg(not(feature = "no_plots"))]
-pub use plots_basic::BasicPlotsPackage;
 
 /// Trait that all packages must implement.
 pub trait Package {

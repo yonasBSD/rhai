@@ -30,5 +30,16 @@ def_package! {
             MoreStringPackage
     {
         lib.set_standard_lib(true);
+
+        // Create plots package
+        let plots_package = BasicPlotsPackage::new();
+        let plots_shared = plots_package.as_shared_module();
+
+        // Extract and add the plots submodule
+        if let Some(plots_submodule) = plots_shared.get_sub_module("plots") {
+            println!("Adding plots submodule to StandardPackage");
+            lib.set_sub_module("plots", plots_submodule.clone());
+            lib.set_custom_type::<RhaiPlot>("Plot");
+        }
     }
 }

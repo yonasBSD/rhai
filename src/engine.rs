@@ -6,7 +6,7 @@ use crate::func::native::{
     locked_write, OnDebugCallback, OnDefVarCallback, OnParseTokenCallback, OnPrintCallback,
     OnVarCallback,
 };
-use crate::packages::{Package, StandardPackage, YonasBSDPackage};
+use crate::packages::{Package, StandardPackage, YonasBSDPackage, BasicPlotsPackage};
 use crate::tokenizer::Token;
 use crate::types::StringsInterner;
 use crate::{Dynamic, Identifier, ImmutableString, Locked, SharedModule};
@@ -317,6 +317,9 @@ impl Engine {
 
         // Register the yonasBSD package
         engine.register_global_module(YonasBSDPackage::new().as_shared_module());
+
+        println!("engine.rs :: Plots package has submodule 'plots': {}",
+         BasicPlotsPackage::new().as_shared_module().contains_sub_module("plots"));
 
         engine
     }

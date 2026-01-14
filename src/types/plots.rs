@@ -1,6 +1,6 @@
+use crate::EvalAltResult;
 use ruviz::prelude::*;
 use std::sync::{Arc, Mutex};
-use crate::EvalAltResult;
 
 /// Wrapper for ruviz Plot with interior mutability for Rhai
 #[derive(Clone)]
@@ -11,19 +11,31 @@ impl RhaiPlot {
         RhaiPlot(Arc::new(Mutex::new(Plot::new())))
     }
 
-    pub fn line_internal(&self, x: Vec<f64>, y: Vec<f64>) -> std::result::Result<Self, Box<EvalAltResult>> {
+    pub fn line_internal(
+        &self,
+        x: Vec<f64>,
+        y: Vec<f64>,
+    ) -> std::result::Result<Self, Box<EvalAltResult>> {
         let mut plot = self.0.lock().unwrap();
         *plot = plot.clone().line(&x, &y).into();
         Ok(self.clone())
     }
 
-    pub fn scatter_internal(&self, x: Vec<f64>, y: Vec<f64>) -> std::result::Result<Self, Box<EvalAltResult>> {
+    pub fn scatter_internal(
+        &self,
+        x: Vec<f64>,
+        y: Vec<f64>,
+    ) -> std::result::Result<Self, Box<EvalAltResult>> {
         let mut plot = self.0.lock().unwrap();
         *plot = plot.clone().scatter(&x, &y).into();
         Ok(self.clone())
     }
 
-    pub fn bar_internal(&self, labels: Vec<String>, values: Vec<f64>) -> std::result::Result<Self, Box<EvalAltResult>> {
+    pub fn bar_internal(
+        &self,
+        labels: Vec<String>,
+        values: Vec<f64>,
+    ) -> std::result::Result<Self, Box<EvalAltResult>> {
         let mut plot = self.0.lock().unwrap();
         let label_refs: Vec<&str> = labels.iter().map(|s| s.as_str()).collect();
         *plot = plot.clone().bar(&label_refs, &values).into();
@@ -50,7 +62,8 @@ impl RhaiPlot {
 
     pub fn save_internal(&self, path: &str) -> std::result::Result<(), Box<EvalAltResult>> {
         let plot = self.0.lock().unwrap();
-        plot.clone().save(path)
+        plot.clone()
+            .save(path)
             .map_err(|e| format!("Failed to save plot: {}", e).into())
     }
 }

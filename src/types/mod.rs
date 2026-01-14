@@ -9,12 +9,12 @@ pub mod fn_ptr;
 pub mod immutable_string;
 pub mod interner;
 pub mod parse_error;
+pub mod plots;
 pub mod position;
 pub mod position_none;
 pub mod scope;
 pub mod var_def;
 pub mod variant;
-pub mod plots;
 
 pub use bloom_filter::BloomFilterU64;
 pub use custom_types::{CustomTypeInfo, CustomTypesCollection};

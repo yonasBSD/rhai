@@ -1,179 +1,221 @@
 #![cfg(all(not(feature = "no_plots"), feature = "plots"))]
-//! Rhai scripting engine integration
-//!
-//! Provides a sandboxed scripting environment for complex task logic.
-//! Rhai was chosen for its fast startup time, Rust-native integration,
-//! and familiar syntax.
-
 #![allow(clippy::missing_errors_doc, clippy::missing_panics_doc)]
+
+//! Rhai scripting engine integration for plotting utilities.
 
 use crate::def_package;
 use crate::plugin::*;
-use crate::{Dynamic, Array};
 use crate::types::plots::RhaiPlot;
+use crate::Array;
 
-def_package! {
-    /// Package of plotting utilities using ruviz.
-    pub BasicPlotsPackage(lib) {
-        lib.set_standard_lib(true);
+// -------------------------------------------------------------------------
+// Helper conversion utilities
+// -------------------------------------------------------------------------
 
-        // Register the Plot type
-        lib.set_custom_type::<RhaiPlot>("Plot");
-
-        // Register plotting functions
-        combine_with_exported_module!(lib, "plots", plots_functions);
-    }
+fn array_to_f64_vec(arr: &Array, name: &str) -> Result<Vec<f64>, String> {
+    arr.iter()
+        .map(|v| {
+            v.as_float()
+                .map_err(|typ| format!("{name} must be numbers, got {typ}"))
+        })
+        .collect()
 }
 
-// Plot operations
+fn array_to_string_vec(arr: &Array, name: &str) -> Result<Vec<String>, String> {
+    arr.iter()
+        .map(|v| {
+            v.clone()
+                .into_immutable_string()
+                .map(|s: ImmutableString| s.to_string())
+                .map_err(|typ| format!("{name} must be strings, got {typ}"))
+        })
+        .collect()
+}
+
 #[export_module]
 mod plots_functions {
     use crate::types::plots::RhaiPlot;
     use crate::ImmutableString;
+    use crate::{Array, Dynamic};
+
+    // -------------------------------------------------------------------------
+    // Constructors
+    // -------------------------------------------------------------------------
 
     /// Create a new empty plot.
     ///
     /// # Example
-    ///
     /// ```rhai
-    /// let plot = new_plot();
+    /// import plots as p;
+    ///
+    /// let plot = p::plot();
+    /// plot.title("My Plot");
+    /// plot.save();   // writes "output.png"
     /// ```
-    #[rhai_fn(return_raw)]
-    pub fn new_plot() -> RhaiResult {
+    #[rhai_fn(name = "plot", return_raw)]
+    pub fn plot() -> RhaiResult {
         Ok(Dynamic::from(RhaiPlot::new()))
     }
 
-    /// Add a line plot to the current plot.
+    // -------------------------------------------------------------------------
+    // Method-style plot operations
+    // -------------------------------------------------------------------------
+
+    /// Add a line plot.
     ///
     /// # Example
-    ///
     /// ```rhai
-    /// let x = [0.0, 1.0, 2.0, 3.0, 4.0];
-    /// let y = [0.0, 1.0, 4.0, 9.0, 16.0];
-    /// let plot = new_plot();
-    /// plot = line(plot, x, y);
+    /// import plots as p;
+    ///
+    /// let plot = p::new();
+    /// plot.line([0,1,2], [0,1,4]);
+    /// plot.save();
     /// ```
     #[rhai_fn(name = "line", return_raw)]
-    pub fn line(plot: &mut RhaiPlot, x: Array, y: Array) -> RhaiResult {
-        let x_vec: Result<Vec<f64>, String> = x.iter()
-            .map(|v| v.as_float().map_err(|typ| format!("X values must be numbers, got {}", typ)))
-            .collect();
-        let y_vec: Result<Vec<f64>, String> = y.iter()
-            .map(|v| v.as_float().map_err(|typ| format!("Y values must be numbers, got {}", typ)))
-            .collect();
-
-        let x_vec = x_vec?;
-        let y_vec = y_vec?;
-
+    pub fn line_method(plot: &mut RhaiPlot, x: Array, y: Array) -> RhaiResult {
+        let x_vec = array_to_f64_vec(&x, "X values")?;
+        let y_vec = array_to_f64_vec(&y, "Y values")?;
         Ok(Dynamic::from(plot.line_internal(x_vec, y_vec)?))
     }
 
-    /// Add a scatter plot to the current plot.
+    /// Add a scatter plot.
     ///
     /// # Example
-    ///
     /// ```rhai
-    /// let x = [0.0, 1.0, 2.0, 3.0];
-    /// let y = [1.5, 2.3, 1.8, 3.1];
-    /// let plot = new_plot();
-    /// plot = scatter(plot, x, y);
+    /// import plots as p;
+    ///
+    /// let plot = p::new();
+    /// plot.scatter([1,2,3], [2.1, 1.8, 3.0]);
+    /// plot.save();
     /// ```
     #[rhai_fn(name = "scatter", return_raw)]
-    pub fn scatter(plot: &mut RhaiPlot, x: Array, y: Array) -> RhaiResult {
-        let x_vec: Result<Vec<f64>, String> = x.iter()
-            .map(|v| v.as_float().map_err(|typ| format!("X values must be numbers, got {}", typ)))
-            .collect();
-        let y_vec: Result<Vec<f64>, String> = y.iter()
-            .map(|v| v.as_float().map_err(|typ| format!("Y values must be numbers, got {}", typ)))
-            .collect();
-
-        let x_vec = x_vec?;
-        let y_vec = y_vec?;
-
+    pub fn scatter_method(plot: &mut RhaiPlot, x: Array, y: Array) -> RhaiResult {
+        let x_vec = array_to_f64_vec(&x, "X values")?;
+        let y_vec = array_to_f64_vec(&y, "Y values")?;
         Ok(Dynamic::from(plot.scatter_internal(x_vec, y_vec)?))
     }
 
-    /// Add a bar chart to the current plot.
+    /// Add a bar chart.
     ///
     /// # Example
-    ///
     /// ```rhai
-    /// let labels = ["A", "B", "C"];
-    /// let values = [1.0, 2.5, 1.8];
-    /// let plot = new_plot();
-    /// plot = bar(plot, labels, values);
+    /// import plots as p;
+    ///
+    /// let plot = p::new();
+    /// plot.bar(["A","B","C"], [1.0, 2.5, 1.8]);
+    /// plot.show();
     /// ```
     #[rhai_fn(name = "bar", return_raw)]
-    pub fn bar(plot: &mut RhaiPlot, labels: Array, values: Array) -> RhaiResult {
-        let label_vec: Result<Vec<String>, String> = labels.iter()
-            .map(|v| {
-                v.clone().into_immutable_string()
-                    .map(|s: ImmutableString| s.to_string())
-                    .map_err(|typ| format!("Labels must be strings, got {}", typ))
-            })
-            .collect();
-        let value_vec: Result<Vec<f64>, String> = values.iter()
-            .map(|v| v.as_float().map_err(|typ| format!("Values must be numbers, got {}", typ)))
-            .collect();
-
-        let label_vec = label_vec?;
-        let value_vec = value_vec?;
-
+    pub fn bar_method(plot: &mut RhaiPlot, labels: Array, values: Array) -> RhaiResult {
+        let label_vec = array_to_string_vec(&labels, "Labels")?;
+        let value_vec = array_to_f64_vec(&values, "Values")?;
         Ok(Dynamic::from(plot.bar_internal(label_vec, value_vec)?))
     }
 
-    /// Set the title of the plot.
+    /// Set the plot title.
     ///
     /// # Example
-    ///
     /// ```rhai
-    /// let plot = new_plot();
-    /// plot = title(plot, "My Plot");
+    /// import plots as p;
+    ///
+    /// let plot = p::new();
+    /// plot.title("Experiment Results");
+    /// plot.save();
     /// ```
     #[rhai_fn(name = "title", return_raw)]
-    pub fn title(plot: &mut RhaiPlot, title: &str) -> RhaiResult {
+    pub fn title_method(plot: &mut RhaiPlot, title: &str) -> RhaiResult {
         Ok(Dynamic::from(plot.title_internal(title)?))
     }
 
-    /// Set the x-axis label of the plot.
+    /// Set the x-axis label.
     ///
     /// # Example
-    ///
     /// ```rhai
-    /// let plot = new_plot();
-    /// plot = xlabel(plot, "Time (s)");
+    /// import plots as p;
+    ///
+    /// let plot = p::new();
+    /// plot.xlabel("Time (s)");
+    /// plot.save();
     /// ```
     #[rhai_fn(name = "xlabel", return_raw)]
-    pub fn xlabel(plot: &mut RhaiPlot, label: &str) -> RhaiResult {
+    pub fn xlabel_method(plot: &mut RhaiPlot, label: &str) -> RhaiResult {
         Ok(Dynamic::from(plot.xlabel_internal(label)?))
     }
 
-    /// Set the y-axis label of the plot.
+    /// Set the y-axis label.
     ///
     /// # Example
-    ///
     /// ```rhai
-    /// let plot = new_plot();
-    /// plot = ylabel(plot, "Amplitude");
+    /// import plots as p;
+    ///
+    /// let plot = p::new();
+    /// plot.ylabel("Amplitude");
+    /// plot.show();
     /// ```
     #[rhai_fn(name = "ylabel", return_raw)]
-    pub fn ylabel(plot: &mut RhaiPlot, label: &str) -> RhaiResult {
+    pub fn ylabel_method(plot: &mut RhaiPlot, label: &str) -> RhaiResult {
         Ok(Dynamic::from(plot.ylabel_internal(label)?))
     }
 
+    // -------------------------------------------------------------------------
+    // Save / Show
+    // -------------------------------------------------------------------------
+
     /// Save the plot to a file.
+    /// Defaults to `"output.png"` if no path is provided.
     ///
     /// # Example
-    ///
     /// ```rhai
-    /// let plot = new_plot();
-    /// plot = line(plot, x, y);
-    /// plot = title(plot, "My Plot");
-    /// save(plot, "output.png");
+    /// import plots as p;
+    ///
+    /// let plot = p::new();
+    /// plot.line([1,2,3], [4,5,6]);
+    ///
+    /// plot.save();              // writes "output.png"
+    /// plot.save("custom.png");  // writes "custom.png"
     /// ```
     #[rhai_fn(name = "save", return_raw)]
-    pub fn save(plot: &mut RhaiPlot, path: &str) -> RhaiResult {
+    pub fn save_method(plot: &mut RhaiPlot, path: Option<&str>) -> RhaiResult {
+        let path = path.unwrap_or("output.png");
         plot.save_internal(path)?;
         Ok(Dynamic::UNIT)
+    }
+
+    /// Alias for `save()`.
+    ///
+    /// # Example
+    /// ```rhai
+    /// import plots as p;
+    ///
+    /// let plot = p::new();
+    /// plot.scatter([1,2,3], [3,2,1]);
+    ///
+    /// plot.show();              // writes "output.png"
+    /// plot.show("preview.png"); // writes "preview.png"
+    /// ```
+    #[rhai_fn(name = "show", return_raw)]
+    pub fn show_method(plot: &mut RhaiPlot, path: Option<&str>) -> RhaiResult {
+        let path = path.unwrap_or("output.png");
+        plot.save_internal(path)?;
+        Ok(Dynamic::UNIT)
+    }
+}
+
+def_package! {
+    /// Package of plotting utilities using ruviz.
+    pub BasicPlotsPackage(lib) {
+        lib.set_standard_lib(false);
+
+        // Register the custom Rhai type for plots.
+        lib.set_custom_type::<RhaiPlot>("Plot");
+
+        // Build the actual 'plots' submodule.
+        let mut plots_mod = Module::new();
+
+        // Export all functions from your Rust module.
+        plots_mod.combine(exported_module!(plots_functions));
+
+        // Attach the submodule under the name 'plots'.
+        lib.set_sub_module("plots", plots_mod);
     }
 }
